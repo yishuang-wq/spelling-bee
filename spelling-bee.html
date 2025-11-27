@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>小學生英文拼字學習機 🐝</title>
+    <style>
+        :root {
+            --primary: #FFD54F; /* 亮黃 */
+            --primary-dark: #FFC107;
+            --secondary: #4FC3F7; /* 天空藍 */
+            --accent: #FF7043; /* 活潑橘 */
+            --bg: #FFF9C4; /* 淡奶油色背景 */
+            --text: #37474F;
+            --white: #ffffff;
+            --vowel: #E53935; /* 母音紅 */
+            --consonant: #1E88E5; /* 子音藍 */
+            --success: #66BB6A;
+            --error: #EF5350;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        
+        body {
+            font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* Header Area */
+        header {
+            width: 100%;
+            background: var(--primary);
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        h1 { margin: 0 0 10px 0; font-size: 1.5rem; color: #5D4037; }
+        
+        .controls-row {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        select {
+            padding: 8px 12px;
+            border-radius: 20px;
+            border: 2px solid var(--primary-dark);
+            font-size: 1rem;
+            background: white;
+            outline: none;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            width: 95%;
+            max-width: 600px;
+            margin: 20px auto 10px;
+            background: rgba(255,255,255,0.6);
+            border-radius: 30px;
+            padding: 5px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1rem;
+            border-radius: 25px;
+            transition: all 0.3s;
+            color: #78909C;
+        }
+
+        .tab-btn.active {
+            background: var(--secondary);
+            color: white;
+            box-shadow: 0 4px 6px rgba(79, 195, 247, 0.4);
+        }
+
+        /* Main Game Area */
+        #game-area {
+            width: 95%;
+            max-width: 600px;
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+            text-align: center;
+            margin-bottom: 20px;
+            min-height: 300px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        /* Mode A: Study Styles */
+        .big-word {
+            font-size: 3.5rem;
+            font-weight: bold;
+            margin: 20px 0;
+            letter-spacing: 2px;
+            word-break: break-word;
+        }
+        .vowel { color: var(--vowel); }
+        .consonant { color: var(--consonant); }
+        
+        .syllable-display {
+            font-size: 1.5rem;
+            color: #888;
+            margin-bottom: 10px;
+            height: 30px;
+        }
+
+        /* Mode B: Blocks */
+        .letter-slots {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+            margin: 20px 0;
+            min-height: 60px;
+        }
+        .slot {
+            width: 45px;
+            height: 45px;
+            border-bottom: 3px solid #ccc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: var(--text);
+        }
+        .slot.filled { border-bottom-color: var(--secondary); }
+        
+        .scramble-area {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+        }
+        .block-btn {
+            width: 50px;
+            height: 50px;
+            background: var(--primary);
+            border: none;
+            border-radius: 12px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 0 var(--primary-dark);
+            transition: transform 0.1s;
+        }
+        .block-btn:active { transform: translateY(4px); box-shadow: none; }
+        .block-btn:disabled { background: #eee; color: #ccc; box-shadow: none; cursor: default; transform: none; }
+
+        /* Mode C: Dictation */
+        .input-box {
+            font-size: 2rem;
+            padding: 10px;
+            width: 80%;
+            text-align: center;
+            border: 3px solid var(--secondary);
+            border-radius: 15px;
+            outline: none;
+            margin: 20px 0;
+        }
+        .input-box:focus { border-color: var(--accent); }
+
+        /* Common Info */
+        .chinese { font-size: 1.5rem; margin-top: 10px; color: #555; }
+        .sentence { font-style: italic; color: #888; margin-top: 10px; font-size: 0.9rem; }
+        
+        /* Navigation */
+        .nav-controls {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            margin-top: auto;
+            padding-top: 20px;
+        }
+        .action-btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-size: 1rem;
+            cursor: pointer;
+            box-shadow: 0 4px 0 #D84315;
+        }
+        .action-btn:active { transform: translateY(4px); box-shadow: none; }
+        .speak-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            font-size: 24px;
+            background: var(--secondary);
+            box-shadow: 0 4px 0 #0288D1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .feedback {
+            font-size: 1.2rem;
+            height: 30px;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        /* Animations */
+        @keyframes shake {
+            0% { transform: translateX(0); } 25% { transform: translateX(-5px); } 50% { transform: translateX(5px); } 75% { transform: translateX(-5px); } 100% { transform: translateX(0); }
+        }
+        @keyframes pop {
+            0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(1); }
+        }
+        .anim-shake { animation: shake 0.4s; color: var(--error); }
+        .anim-pop { animation: pop 0.3s; color: var(--success); }
+
+        /* Mobile Adjustments */
+        @media (max-width: 480px) {
+            .big-word { font-size: 2.5rem; }
+            .slot { width: 35px; height: 35px; font-size: 1.4rem; }
+            .block-btn { width: 40px; height: 40px; font-size: 1.2rem; }
+            h1 { font-size: 1.2rem; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>🐝 Spelling Bee 拼字學習機</h1>
+    <div class="controls-row">
+        <select id="levelSelect" onchange="changeLevel()">
+            </select>
+        <select id="voiceSelect" onchange="setVoice()">
+            <option value="">載入語音中...</option>
+        </select>
+    </div>
+</header>
+
+<div class="tabs">
+    <button class="tab-btn active" onclick="switchMode('study')" id="tab-study">👀 認識單字</button>
+    <button class="tab-btn" onclick="switchMode('block')" id="tab-block">🧩 拼拼圖</button>
+    <button class="tab-btn" onclick="switchMode('dictation')" id="tab-dictation">✍️ 聽寫測驗</button>
+</div>
+
+<div id="game-area">
+    </div>
+
+<script>
+    // ==========================================
+    // 1. 資料處理與初始化
+    // ==========================================
+    
+    // 原始單字字串
+    const rawWords = "absolute.actual.adopt.amiss.anew.applesauce.astray.awful.bloodhound.capture.carefree.clump.cobweb.concern.conduct.course.crystal.egret.farther.fiber.fortune.fountain.gentle.glory.godfather.greenhouse.handsome.hollow.honest.joined.kingdom.liberty.limit.location.loose.magnet.meaning.metal.midnight.mink.mistreat.misuse.moral.motion.murder.noble.observe.occur.odor.oneself.operate.oriole.otherwise.pause.perfume.pollute.powder.prefer.prevent.private.proper.provide.recent.reduce.regular.royal.rumble.sailor.scatter.scent.seize.servant.shoplift.silkworm.skyrocket.snowstorm.sputter.steady.straight.sturdy.style.surface.sweat.tangle.task.tease.temple.thief.thigh.tour.twice.union.usual.vapor.volume.wander.wealth.whenever.wound.zigzag";
+
+    // 簡單的中文映射與音節產生邏輯 (模擬資料庫)
+    // 為了檔案輕量化，我們用簡單邏輯產生，部分中文為通用翻譯
+    const dictionary = {
+        absolute: { zh: "絕對的", syl: ["ab", "so", "lute"] },
+        actual: { zh: "實際的", syl: ["ac", "tu", "al"] },
+        adopt: { zh: "收養；採用", syl: ["a", "dopt"] },
+        amiss: { zh: "有毛病的", syl: ["a", "miss"] },
+        anew: { zh: "重新", syl: ["a", "new"] },
+        applesauce: { zh: "蘋果醬", syl: ["ap", "ple", "sauce"] },
+        astray: { zh: "迷路的", syl: ["a", "stray"] },
+        awful: { zh: "糟糕的", syl: ["aw", "ful"] },
+        bloodhound: { zh: "警犬", syl: ["blood", "hound"] },
+        capture: { zh: "捕捉", syl: ["cap", "ture"] },
+        carefree: { zh: "無憂無慮的", syl: ["care", "free"] },
+        clump: { zh: "樹叢；一團", syl: ["clump"] },
+        cobweb: { zh: "蜘蛛網", syl: ["cob", "web"] },
+        concern: { zh: "關心", syl: ["con", "cern"] },
+        conduct: { zh: "行為；引導", syl: ["con", "duct"] },
+        course: { zh: "課程；路線", syl: ["course"] },
+        crystal: { zh: "水晶", syl: ["crys", "tal"] },
+        egret: { zh: "白鷺", syl: ["e", "gret"] },
+        farther: { zh: "更遠的", syl: ["far", "ther"] },
+        fiber: { zh: "纖維", syl: ["fi", "ber"] },
+        fortune: { zh: "財富；運氣", syl: ["for", "tune"] },
+        fountain: { zh: "噴泉", syl: ["foun", "tain"] },
+        gentle: { zh: "溫柔的", syl: ["gen", "tle"] },
+        glory: { zh: "光榮", syl: ["glo", "ry"] },
+        godfather: { zh: "教父", syl: ["god", "fa", "ther"] },
+        greenhouse: { zh: "溫室", syl: ["green", "house"] },
+        handsome: { zh: "英俊的", syl: ["hand", "some"] },
+        hollow: { zh: "中空的", syl: ["hol", "low"] },
+        honest: { zh: "誠實的", syl: ["hon", "est"] },
+        joined: { zh: "連結的", syl: ["joined"] },
+        kingdom: { zh: "王國", syl: ["king", "dom"] },
+        liberty: { zh: "自由", syl: ["lib", "er", "ty"] },
+        limit: { zh: "限制", syl: ["lim", "it"] },
+        location: { zh: "地點", syl: ["lo", "ca", "tion"] },
+        loose: { zh: "鬆的", syl: ["loose"] },
+        magnet: { zh: "磁鐵", syl: ["mag", "net"] },
+        meaning: { zh: "意義", syl: ["mean", "ing"] },
+        metal: { zh: "金屬", syl: ["met", "al"] },
+        midnight: { zh: "午夜", syl: ["mid", "night"] },
+        mink: { zh: "貂皮", syl: ["mink"] },
+        mistreat: { zh: "虐待", syl: ["mis", "treat"] },
+        misuse: { zh: "誤用", syl: ["mis", "use"] },
+        moral: { zh: "道德的", syl: ["mor", "al"] },
+        motion: { zh: "動作", syl: ["mo", "tion"] },
+        murder: { zh: "謀殺", syl: ["mur", "der"] },
+        noble: { zh: "高尚的", syl: ["no", "ble"] },
+        observe: { zh: "觀察", syl: ["ob", "serve"] },
+        occur: { zh: "發生", syl: ["oc", "cur"] },
+        odor: { zh: "氣味", syl: ["o", "dor"] },
+        oneself: { zh: "自己", syl: ["one", "self"] },
+        operate: { zh: "操作", syl: ["op", "er", "ate"] },
+        oriole: { zh: "黃鸝鳥", syl: ["o", "ri", "ole"] },
+        otherwise: { zh: "否則", syl: ["oth", "er", "wise"] },
+        pause: { zh: "暫停", syl: ["pause"] },
+        perfume: { zh: "香水", syl: ["per", "fume"] },
+        pollute: { zh: "污染", syl: ["pol", "lute"] },
+        powder: { zh: "粉末", syl: ["pow", "der"] },
+        prefer: { zh: "偏好", syl: ["pre", "fer"] },
+        prevent: { zh: "預防", syl: ["pre", "vent"] },
+        private: { zh: "私人的", syl: ["pri", "vate"] },
+        proper: { zh: "適當的", syl: ["prop", "er"] },
+        provide: { zh: "提供", syl: ["pro", "vide"] },
+        recent: { zh: "最近的", syl: ["re", "cent"] },
+        reduce: { zh: "減少", syl: ["re", "duce"] },
+        regular: { zh: "規律的", syl: ["reg", "u", "lar"] },
+        royal: { zh: "皇家的", syl: ["roy", "al"] },
+        rumble: { zh: "隆隆聲", syl: ["rum", "ble"] },
+        sailor: { zh: "水手", syl: ["sail", "or"] },
+        scatter: { zh: "散播", syl: ["scat", "ter"] },
+        scent: { zh: "氣味", syl: ["scent"] },
+        seize: { zh: "抓住", syl: ["seize"] },
+        servant: { zh: "僕人", syl: ["ser", "vant"] },
+        shoplift: { zh: "順手牽羊", syl: ["shop", "lift"] },
+        silkworm: { zh: "蠶", syl: ["silk", "worm"] },
+        skyrocket: { zh: "飛漲", syl: ["sky", "rock", "et"] },
+        snowstorm: { zh: "暴風雪", syl: ["snow", "storm"] },
+        sputter: { zh: "噴濺聲", syl: ["sput", "ter"] },
+        steady: { zh: "穩定的", syl: ["stead", "y"] },
+        straight: { zh: "直的", syl: ["straight"] },
+        sturdy: { zh: "堅固的", syl: ["stur", "dy"] },
+        style: { zh: "風格", syl: ["style"] },
+        surface: { zh: "表面", syl: ["sur", "face"] },
+        sweat: { zh: "汗水", syl: ["sweat"] },
+        tangle: { zh: "糾結", syl: ["tan", "gle"] },
+        task: { zh: "任務", syl: ["task"] },
+        tease: { zh: "戲弄", syl: ["tease"] },
+        temple: { zh: "寺廟", syl: ["tem", "ple"] },
+        thief: { zh: "小偷", syl: ["thief"] },
+        thigh: { zh: "大腿", syl: ["thigh"] },
+        tour: { zh: "旅遊", syl: ["tour"] },
+        twice: { zh: "兩次", syl: ["twice"] },
+        union: { zh: "聯合", syl: ["un", "ion"] },
+        usual: { zh: "通常的", syl: ["u", "su", "al"] },
+        vapor: { zh: "蒸氣", syl: ["va", "por"] },
+        volume: { zh: "體積；音量", syl: ["vol", "ume"] },
+        wander: { zh: "漫遊", syl: ["wan", "der"] },
+        wealth: { zh: "財富", syl: ["wealth"] },
+        whenever: { zh: "無論何時", syl: ["when", "ev", "er"] },
+        wound: { zh: "傷口", syl: ["wound"] },
+        zigzag: { zh: "Z字形", syl: ["zig", "zag"] }
+    };
+
+    // 建立資料陣列
+    let allWords = [];
+    const list = rawWords.split('.').filter(w => w.length > 0);
+    
+    list.forEach(w => {
+        const info = dictionary[w] || { zh: "單字", syl: [w] };
+        allWords.push({
+            word: w,
+            syllables: info.syl,
+            meaning: info.zh,
+            sentence: `The word is ${w}.` // 簡單例句
+        });
+    });
+
+    // 變數設定
+    let currentLevelWords = [];
+    let currentIndex = 0;
+    let currentMode = 'study';
+    let currentVoice = null;
+    let isSyllableShown = false;
+    let synth = window.speechSynthesis;
+
+    // ==========================================
+    // 2. 程式啟動邏輯
+    // ==========================================
+
+    window.onload = function() {
+        initLevels();
+        initVoices();
+        loadLevel(0);
+    };
+
+    function initLevels() {
+        const select = document.getElementById('levelSelect');
+        const totalLevels = Math.ceil(allWords.length / 10);
+        
+        for(let i=0; i<totalLevels; i++) {
+            let option = document.createElement('option');
+            option.value = i;
+            option.text = `Level ${i+1} (${i*10+1}-${Math.min((i+1)*10, allWords.length)})`;
+            select.appendChild(option);
+        }
+        let allOpt = document.createElement('option');
+        allOpt.value = 'all';
+        allOpt.text = '全部單字挑戰';
+        select.appendChild(allOpt);
+    }
+
+    // 語音載入處理（處理不同瀏覽器差異）
+    function initVoices() {
+        const voiceSelect = document.getElementById('voiceSelect');
+        
+        function load() {
+            let voices = synth.getVoices();
+            if(voices.length === 0) return;
+            
+            voiceSelect.innerHTML = '';
+            // 優先尋找 Google US English 或其他英文
+            let selectedIndex = 0;
+            
+            voices.forEach((voice, index) => {
+                let option = document.createElement('option');
+                option.value = index;
+                option.text = `${voice.name} (${voice.lang})`;
+                voiceSelect.appendChild(option);
+                
+                if (voice.lang === 'en-US' && voice.name.includes('Google')) {
+                    selectedIndex = index;
+                } else if (!currentVoice && voice.lang.includes('en')) {
+                    selectedIndex = index;
+                }
+            });
+            
+            voiceSelect.selectedIndex = selectedIndex;
+            currentVoice = voices[selectedIndex];
+        }
+
+        load();
+        if (speechSynthesis.onvoiceschanged !== undefined) {
+            speechSynthesis.onvoiceschanged = load;
+        }
+    }
+
+    function setVoice() {
+        const voiceSelect = document.getElementById('voiceSelect');
+        const voices = synth.getVoices();
+        currentVoice = voices[voiceSelect.value];
+    }
+
+    function changeLevel() {
+        const select = document.getElementById('levelSelect');
+        loadLevel(select.value);
+    }
+
+    function loadLevel(val) {
+        if(val === 'all') {
+            currentLevelWords = [...allWords];
+        } else {
+            let start = parseInt(val) * 10;
+            let end = start + 10;
+            currentLevelWords = allWords.slice(start, end);
+        }
+        currentIndex = 0;
+        renderGame();
+    }
+
+    function switchMode(mode) {
+        currentMode = mode;
+        // 更新按鈕狀態
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.getElementById(`tab-${mode}`).classList.add('active');
+        isSyllableShown = false; // 重置音節顯示
+        renderGame();
+    }
+
+    // ==========================================
+    // 3. 渲染與遊戲邏輯
+    // ==========================================
+
+    function renderGame() {
+        const container = document.getElementById('game-area');
+        const wordObj = currentLevelWords[currentIndex];
+        
+        if(!wordObj) return;
+
+        let html = '';
+        
+        // 頂部進度
+        html += `<div style="color: #999; margin-bottom: 10px;">Word ${currentIndex + 1} / ${currentLevelWords.length}</div>`;
+
+        // 根據模式渲染內容
+        if (currentMode === 'study') {
+            // --- 模式 A: 學習 ---
+            html += `<div class="feedback" id="feedback-msg"></div>`;
+            html += `<div class="syllable-display" id="syl-display">${isSyllableShown ? wordObj.syllables.join(' • ') : ''}</div>`;
+            html += `<div class="big-word">${colorCodeWord(wordObj.word)}</div>`;
+            html += `<div class="chinese">${wordObj.meaning}</div>`;
+            html += `<div class="sentence">"${wordObj.sentence}"</div>`;
+            
+            html += `
+            <div class="nav-controls">
+                 <button class="action-btn" onclick="toggleSyllable()">顯示音節</button>
+                 <button class="action-btn speak-btn" onclick="speakWord()">🔊</button>
+                 <button class="action-btn" onclick="nextWord()">下一字 ➡</button>
+            </div>`;
+            
+        } else if (currentMode === 'block') {
+            // --- 模式 B: 積木 ---
+            html += `<div class="feedback" id="feedback-msg">重組單字！</div>`;
+            html += `<div class="chinese">${wordObj.meaning}</div>`;
+            
+            // 答案區
+            html += `<div class="letter-slots" id="slots-area">`;
+            for(let i=0; i<wordObj.word.length; i++) {
+                html += `<div class="slot" id="slot-${i}"></div>`;
+            }
+            html += `</div>`;
+            
+            // 按鈕區
+            html += `<div class="scramble-area" id="block-btns"></div>`;
+            
+            html += `
+            <div class="nav-controls">
+                 <button class="action-btn" style="background:#ccc" onclick="resetBlockGame()">重置</button>
+                 <button class="action-btn speak-btn" onclick="speakWord()">🔊</button>
+                 <button class="action-btn" onclick="nextWord()">跳過 ➡</button>
+            </div>`;
+            
+            // 渲染後初始化積木按鈕
+            setTimeout(() => initBlockGame(wordObj.word), 0);
+
+        } else if (currentMode === 'dictation') {
+            // --- 模式 C: 聽寫 ---
+            html += `<div class="feedback" id="feedback-msg">聽音輸入</div>`;
+            html += `<div class="chinese">${wordObj.meaning}</div>`;
+            html += `<input type="text" class="input-box" id="dict-input" autocomplete="off" placeholder="Type here...">`;
+            
+            html += `
+            <div class="nav-controls">
+                 <button class="action-btn" onclick="checkDictation()">檢查 ✅</button>
+                 <button class="action-btn speak-btn" onclick="speakWord()">🔊</button>
+                 <button class="action-btn" onclick="nextWord()">跳過 ➡</button>
+            </div>`;
+        }
+
+        container.innerHTML = html;
+
+        // 切換單字自動發音
+        if(currentMode !== 'study') {
+            setTimeout(speakWord, 500);
+        }
+    }
+
+    // --- 輔助功能 ---
+
+    function nextWord() {
+        if (currentIndex < currentLevelWords.length - 1) {
+            currentIndex++;
+            isSyllableShown = false;
+            renderGame();
+        } else {
+            alert("恭喜！這個 Level 完成了！🎉");
+            currentIndex = 0;
+            renderGame();
+        }
+    }
+
+    function speakWord() {
+        if(!currentVoice) {
+            initVoices(); // 嘗試重新載入
+        }
+        const word = currentLevelWords[currentIndex].word;
+        const utterance = new SpeechSynthesisUtterance(word);
+        if(currentVoice) utterance.voice = currentVoice;
+        utterance.rate = 0.8; // 稍微放慢給小孩聽
+        synth.speak(utterance);
+    }
+
+    // 模式 A: 字串染色
+    function colorCodeWord(word) {
+        return word.split('').map(char => {
+            if (/[aeiou]/i.test(char)) return `<span class="vowel">${char}</span>`;
+            return `<span class="consonant">${char}</span>`;
+        }).join('');
+    }
+
+    function toggleSyllable() {
+        isSyllableShown = !isSyllableShown;
+        const display = document.getElementById('syl-display');
+        const wordObj = currentLevelWords[currentIndex];
+        display.innerText = isSyllableShown ? wordObj.syllables.join(' • ') : '';
+    }
+
+    // 模式 B: 積木邏輯
+    let currentBlockAnswer = "";
+    
+    function initBlockGame(word) {
+        currentBlockAnswer = "";
+        const chars = word.split('').map((c, i) => ({char: c, id: i}));
+        // 洗牌算法
+        for (let i = chars.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [chars[i], chars[j]] = [chars[j], chars[i]];
+        }
+        
+        const btnContainer = document.getElementById('block-btns');
+        chars.forEach(item => {
+            const btn = document.createElement('button');
+            btn.className = 'block-btn';
+            btn.innerText = item.char;
+            btn.onclick = () => onBlockClick(item.char, btn);
+            btnContainer.appendChild(btn);
+        });
+    }
+
+    function onBlockClick(char, btnElement) {
+        const targetWord = currentLevelWords[currentIndex].word;
+        const nextIndex = currentBlockAnswer.length;
+        
+        // 將字母填入格子
+        const slot = document.getElementById(`slot-${nextIndex}`);
+        slot.innerText = char;
+        slot.classList.add('filled');
+        
+        // 禁用按鈕
+        btnElement.style.visibility = 'hidden'; // 隱藏但佔位
+        
+        currentBlockAnswer += char;
+
+        // 檢查當前這一步是否正確 (可選: 即時反饋)
+        // 這裡做最後檢查
+        if (currentBlockAnswer.length === targetWord.length) {
+            if (currentBlockAnswer === targetWord) {
+                document.getElementById('feedback-msg').innerHTML = "<span class='anim-pop'>Correct! 🎉</span>";
+                playSound(true);
+                setTimeout(nextWord, 1500);
+            } else {
+                document.getElementById('feedback-msg').innerHTML = "<span class='anim-shake'>Try Again! ❌</span>";
+                playSound(false);
+                setTimeout(resetBlockGame, 1000);
+            }
+        }
+    }
+
+    function resetBlockGame() {
+        renderGame();
+    }
+
+    // 模式 C: 聽寫邏輯
+    function checkDictation() {
+        const input = document.getElementById('dict-input');
+        const target = currentLevelWords[currentIndex].word;
+        const msg = document.getElementById('feedback-msg');
+        
+        if (input.value.trim().toLowerCase() === target.toLowerCase()) {
+            msg.innerHTML = "<span class='anim-pop'>Awesome! 🌟</span>";
+            input.style.borderColor = "var(--success)";
+            playSound(true);
+            setTimeout(nextWord, 1500);
+        } else {
+            msg.innerHTML = "<span class='anim-shake'>Oops! 😅</span>";
+            input.style.borderColor = "var(--error)";
+            input.classList.add('anim-shake');
+            playSound(false);
+            setTimeout(() => {
+                input.classList.remove('anim-shake');
+                input.value = '';
+                input.focus();
+            }, 1000);
+        }
+    }
+
+    // 簡單音效 (使用 Web Audio API 生成嗶嗶聲，不依賴外部檔)
+    function playSound(isCorrect) {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        
+        if (isCorrect) {
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+            osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.1); // A5
+            gain.gain.setValueAtTime(0.1, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.3);
+        } else {
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(150, ctx.currentTime);
+            osc.frequency.linearRampToValueAtTime(100, ctx.currentTime + 0.2);
+            gain.gain.setValueAtTime(0.1, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.3);
+        }
+    }
+
+</script>
+</body>
+</html>
