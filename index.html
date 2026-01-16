@@ -3,21 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>拼字學習機 V4.4 (完整修復版)</title>
+    <title>拼字學習機 V5.0 (字根版)</title>
     
     <style>
         :root {
-            --primary: #FFD54F; --primary-dark: #FFC107; --secondary: #4FC3F7;
-            --accent: #FF7043; --bg: #FFF9C4; --text: #37474F;
-            --vowel: #E53935; --consonant: #1565C0; --success: #66BB6A; --error: #EF5350;
-            --sent-bg: #E0F7FA; --sent-text: #006064; --sent-hover: #B2EBF2;
-            --hint-bg: #F3E5F5; --hint-text: #7B1FA2;
+            --primary: #FFD54F; --secondary: #4FC3F7; --accent: #FF7043; 
+            --bg: #FFF9C4; --text: #37474F; --success: #66BB6A; --error: #EF5350;
+            --sent-bg: #E0F7FA; --root-bg: #E8F5E9; --root-text: #2E7D32;
         }
         
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         
         body {
-            font-family: 'Comic Sans MS', 'Chalkboard SE', '微軟正黑體', sans-serif;
+            font-family: 'Comic Sans MS', '微軟正黑體', sans-serif;
             background-color: var(--bg); color: var(--text); margin: 0; padding: 0;
             display: flex; flex-direction: column; align-items: center; min-height: 100vh;
         }
@@ -43,81 +41,86 @@
         #game-area {
             width: 95%; max-width: 600px; background: white; border-radius: 25px; padding: 25px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.08); text-align: center; margin-bottom: 20px;
-            min-height: 350px; display: flex; flex-direction: column; justify-content: center; align-items: center;
+            min-height: 400px; display: flex; flex-direction: column; justify-content: center; align-items: center;
         }
 
-        .big-word { font-size: 3rem; font-weight: bold; margin: 15px 0; letter-spacing: 1px; line-height: 1.2; cursor: pointer; }
+        .big-word { font-size: 3rem; font-weight: bold; margin: 15px 0; letter-spacing: 1px; cursor: pointer; }
         .big-word:active { transform: scale(0.95); }
-        .vowel { color: var(--vowel); } .consonant { color: var(--consonant); }
         .syllable-display { font-size: 1.5rem; color: #90A4AE; margin-bottom: 5px; height: 30px; font-family: monospace; }
         
+        .chinese { font-size: 1.5rem; margin-top: 5px; color: #546E7A; font-weight: bold; }
+
+        /* 例句標籤 */
+        .sentence-tag {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: var(--sent-bg); color: #006064;
+            padding: 10px 20px; border-radius: 25px; margin-top: 10px;
+            font-size: 1rem; font-style: italic; cursor: pointer;
+            transition: all 0.2s; max-width: 100%; text-align: left;
+        }
+        .sentence-tag:active { transform: scale(0.98); background: #fff; }
+
+        /* 字根標籤 (新功能) */
+        .root-tag {
+            display: none; /* 預設隱藏 */
+            background: var(--root-bg); color: var(--root-text);
+            padding: 8px 15px; border-radius: 15px; margin-top: 8px;
+            font-size: 0.95rem; border: 1px dashed var(--root-text);
+        }
+        .root-btn {
+            background: none; border: none; color: var(--root-text);
+            font-size: 0.9rem; cursor: pointer; text-decoration: underline; margin-top: 5px;
+        }
+
+        /* 遊戲元素 */
         .letter-slots { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin: 20px 0; min-height: 60px; }
         .slot { width: 40px; height: 45px; border-bottom: 4px solid #E0E0E0; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; font-weight: bold; }
-        .slot.filled { border-bottom-color: var(--secondary); transform: translateY(-2px); }
+        .slot.filled { border-bottom-color: var(--secondary); }
         .slot.space { border-bottom: none; width: 15px; }
         
         .scramble-area { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 10px; }
-        .block-btn { width: 50px; height: 50px; background: var(--primary); border: none; border-radius: 12px; font-size: 1.6rem; font-weight: bold; box-shadow: 0 4px 0 var(--primary-dark); cursor: pointer; }
+        .block-btn { width: 50px; height: 50px; background: var(--primary); border: none; border-radius: 12px; font-size: 1.6rem; font-weight: bold; box-shadow: 0 4px 0 #FFC107; cursor: pointer; }
         .block-btn:active { transform: translateY(4px); box-shadow: none; }
         .block-btn:disabled { opacity: 0; pointer-events: none; }
         
         .input-box { font-size: 1.8rem; padding: 10px; width: 90%; text-align: center; border: 3px solid var(--secondary); border-radius: 15px; outline: none; margin: 20px 0; background: #FAFAFA; }
-        
-        .chinese { font-size: 1.5rem; margin-top: 5px; color: #546E7A; font-weight: bold; }
 
-        .sentence-tag {
-            display: inline-flex; align-items: center; gap: 8px;
-            background: var(--sent-bg); color: var(--sent-text);
-            padding: 10px 20px; border-radius: 25px; margin-top: 15px;
-            font-size: 1.1rem; font-style: italic; cursor: pointer;
-            transition: all 0.2s; border: 2px solid transparent;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            max-width: 100%; line-height: 1.4; text-align: left;
-        }
-        .sentence-tag:hover { background: var(--sent-hover); transform: translateY(-2px); }
-        .sentence-tag:active { transform: scale(0.98); }
-        .sentence-tag.playing { border-color: var(--secondary); background: #fff; box-shadow: 0 0 10px rgba(79, 195, 247, 0.5); }
-
-        .hint-section { margin-top: 15px; min-height: 40px; display: flex; flex-direction: column; align-items: center; }
-        .hint-btn {
-            background: var(--hint-bg); color: var(--hint-text);
-            border: none; padding: 5px 15px; border-radius: 20px;
-            font-size: 0.9rem; font-weight: bold; cursor: pointer;
-            box-shadow: 0 2px 0 rgba(0,0,0,0.1);
-        }
-        .hint-btn:active { transform: translateY(2px); box-shadow: none; }
-        .answer-reveal {
-            margin-top: 5px; font-size: 1.5rem; font-weight: bold; 
-            color: var(--error); letter-spacing: 2px; min-height: 30px;
-        }
-
+        /* 控制區 */
         .nav-controls { display: flex; justify-content: space-around; align-items: center; width: 100%; margin-top: auto; padding-top: 25px; }
         .action-btn { background: var(--accent); color: white; border: none; padding: 10px 24px; border-radius: 50px; font-size: 1rem; cursor: pointer; box-shadow: 0 4px 0 #D84315; font-weight: bold; }
         .action-btn:active { transform: translateY(4px); box-shadow: none; }
         .speak-btn { width: 60px; height: 60px; border-radius: 50%; font-size: 26px; background: var(--secondary); box-shadow: 0 5px 0 #0288D1; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; color: white; }
         .speak-btn:active { transform: translateY(4px); box-shadow: none; }
-        
-        .feedback { font-size: 1.3rem; height: 30px; margin-bottom: 5px; font-weight: bold; }
-        .progress-indicator { position: absolute; top: 15px; right: 20px; font-size: 0.9rem; color: #B0BEC5; font-weight: bold; }
 
+        .hint-section { margin-top: 15px; min-height: 40px; display: flex; flex-direction: column; align-items: center; }
+        .hint-btn { background: #F3E5F5; color: #7B1FA2; border: none; padding: 5px 15px; border-radius: 20px; font-size: 0.9rem; font-weight: bold; cursor: pointer; box-shadow: 0 2px 0 rgba(0,0,0,0.1); }
+        .hint-btn:active { transform: translateY(2px); box-shadow: none; }
+        .answer-reveal { margin-top: 5px; font-size: 1.5rem; font-weight: bold; color: var(--error); letter-spacing: 2px; min-height: 30px; }
+
+        /* 設定視窗 */
         #settings-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 200; align-items: center; justify-content: center; }
         .modal-content { background: white; width: 90%; max-width: 500px; padding: 20px; border-radius: 15px; max-height: 85vh; overflow-y: auto; text-align: left; }
         textarea { width: 100%; height: 250px; border: 2px solid #eee; padding: 10px; font-family: monospace; font-size: 0.9rem; border-radius: 8px; resize: vertical; }
         .modal-actions { text-align: right; margin-top: 15px; display: flex; justify-content: flex-end; gap: 10px; }
         
         #emergency-reset { position: fixed; bottom: 10px; left: 10px; font-size: 12px; opacity: 0.7; z-index: 9999; text-decoration: underline; cursor: pointer; color: #d32f2f; background: rgba(255,255,255,0.8); padding: 5px; border-radius: 4px; }
-
-        @keyframes shake { 0%, 100% {transform: translateX(0);} 25% {transform: translateX(-5px);} 75% {transform: translateX(5px);} }
+        
+        .feedback { font-size: 1.3rem; height: 30px; margin-bottom: 5px; font-weight: bold; }
+        .progress-indicator { position: absolute; top: 15px; right: 20px; font-size: 0.9rem; color: #B0BEC5; font-weight: bold; }
+        
+        /* 視覺特效 */
+        .vowel { color: var(--vowel); } .consonant { color: var(--consonant); }
         @keyframes pop { 50% {transform: scale(1.2);} }
-        .anim-shake { animation: shake 0.4s; color: var(--error); }
         .anim-pop { animation: pop 0.3s; color: var(--success); }
+        @keyframes shake { 0%, 100% {transform: translateX(0);} 25% {transform: translateX(-5px);} 75% {transform: translateX(5px);} }
+        .anim-shake { animation: shake 0.4s; color: var(--error); }
     </style>
 </head>
 <body>
 
 <header class="noselect">
     <div style="width:30px"></div>
-    <div class="header-title">🐝 Spelling Bee V4.4</div>
+    <div class="header-title">🐝 Spelling Bee V5.0</div>
     <button class="setting-btn" onclick="openSettings()">⚙️</button>
 </header>
 
@@ -133,13 +136,16 @@
 </div>
 
 <div id="game-area">
-    <div style="padding:20px; color:#999;">Loading... <br>如果長時間未顯示，請按左下角紅字重置</div>
+    <div style="padding:20px; color:#999;">Loading... <br>若卡住請按左下角重置</div>
 </div>
 
 <div id="settings-modal">
     <div class="modal-content">
         <h3 style="margin-top:0; color:var(--text)">📝 編輯單字庫</h3>
-        <p style="font-size:0.9rem; color:#666; background:#f5f5f5; padding:8px; border-radius:5px;">格式：單字=音節=中文=例句</p>
+        <p style="font-size:0.9rem; color:#666; background:#f5f5f5; padding:8px; border-radius:5px;">
+            格式：單字=音節=中文=例句=字根<br>
+            (例：predict=pre-dict=預測=I predict rain.=pre(前)+dict(說))
+        </p>
         <textarea id="data-input"></textarea>
         <div class="modal-actions">
             <button class="action-btn" style="background:#B0BEC5" onclick="closeSettings()">取消</button>
@@ -153,32 +159,16 @@
 
 <script>
     // 錯誤捕捉
-    window.onerror = function(msg, url, line) {
-        console.error("Error:", msg);
-        return false;
-    };
+    window.onerror = function(msg) { console.error(msg); return false; };
 
+    // 預設資料 (含字根)
     const defaultDataRaw = `
-attach=at-tach=附上=Please attach the file.
-grunted=grunt-ed=哼聲=The pig grunted loudly.
-lumber=lum-ber=木材=We need more lumber.
-screwdriver=screw-driv-er=螺絲起子=Hand me the screwdriver.
-sneakers=sneak-ers=運動鞋=I like your sneakers.
-beneath=be-neath=在...下=The cat is beneath the table.
-laces=la-ces=鞋帶=Tie your shoe laces.
-perfectly=per-fect-ly=完美地=It fits perfectly.
-shrunk=shrunk=縮水=My shirt shrunk.
-splinters=splin-ters=碎片=Watch out for splinters.
-board=board=板子=Look at the board.
-loosened=loos-ened=變鬆=The knot loosened.
-travel=trav-el=旅行=We love to travel.
-alley=al-ley=小巷=Do not go in the alley.
-explore=ex-plore=探索=Lets explore the woods.
-pup=pup=小狗=The pup is cute.
-collar=col-lar=項圈=The dog has a red collar.
-furniture=fur-ni-ture=家具=New furniture is nice.
-racket=rack-et=球拍=I lost my racket.
-crash=crash=撞擊=I heard a loud crash.
+predict=pre-dict=預測=Scientists predict the weather.=pre(前) + dict(說) -> 預先說
+attract=at-tract=吸引=Flowers attract bees.=at(去) + tract(拉) -> 拉過來
+bicycle=bi-cy-cle=腳踏車=I ride my bicycle to school.=bi(二) + cycle(圓圈) -> 兩輪車
+exit=ex-it=出口=Please use the emergency exit.=ex(向外) + it(走) -> 走出去
+return=re-turn=返回=Please return the book.=re(回) + turn(轉) -> 轉回來
+portable=por-ta-ble=可攜帶的=This computer is portable.=port(拿) + able(可...的)
 `;
 
     let allWords = [];
@@ -188,25 +178,17 @@ crash=crash=撞擊=I heard a loud crash.
     let currentVoice = null;
     let isSyllableShown = false;
     const synth = window.speechSynthesis;
-    const STORAGE_KEY = 'spelling_bee_v4_4_final'; // 更新 Key
+    const STORAGE_KEY = 'spelling_bee_v5_root'; // 新 Key
 
     // 強制重置
     window.hardReset = function() {
-        if(confirm("確定要強制重置所有設定嗎？")) {
-            localStorage.removeItem(STORAGE_KEY);
-            location.reload();
-        }
+        if(confirm("確定要重置？")) { localStorage.removeItem(STORAGE_KEY); location.reload(); }
     };
 
     // 啟動
     setTimeout(function() {
-        try {
-            loadData();
-            initVoices();
-        } catch(e) {
-            console.error("Init error:", e);
-            document.getElementById('game-area').innerHTML = '<p style="color:red">啟動失敗，請按左下角重置。</p>';
-        }
+        try { loadData(); initVoices(); } 
+        catch(e) { console.error(e); document.getElementById('game-area').innerText='啟動錯誤'; }
     }, 100);
 
     function loadData() {
@@ -226,17 +208,15 @@ crash=crash=撞擊=I heard a loud crash.
                 const s = parts[1] ? parts[1].split('-') : [w];
                 const m = parts[2] || "";
                 const sent = parts[3] || ""; 
-                allWords.push({ w: w, s: s, m: m, sent: sent });
+                const root = parts[4] || ""; // 新增字根欄位
+                allWords.push({ w: w, s: s, m: m, sent: sent, root: root });
             }
         });
         initLevels();
         loadLevel(0);
     }
 
-    function changeLevel() {
-        const select = document.getElementById('levelSelect');
-        loadLevel(select.value);
-    }
+    function changeLevel() { loadLevel(document.getElementById('levelSelect').value); }
 
     function switchMode(mode) {
         currentMode = mode;
@@ -254,14 +234,14 @@ crash=crash=撞擊=I heard a loud crash.
     function closeSettings() { document.getElementById('settings-modal').style.display = 'none'; }
     function saveData() {
         const val = document.getElementById('data-input').value.trim();
-        if(!val) { alert("內容不能為空"); return; }
+        if(!val) { alert("內容為空"); return; }
         localStorage.setItem(STORAGE_KEY, val);
         parseAndSetData(val);
-        alert("設定已儲存！");
+        alert("已儲存");
         closeSettings();
     }
     function resetDefault() {
-        if(confirm("確定要恢復成原始設定嗎？")) {
+        if(confirm("恢復預設？")) {
             localStorage.removeItem(STORAGE_KEY);
             parseAndSetData(defaultDataRaw.trim());
             document.getElementById('data-input').value = defaultDataRaw.trim();
@@ -295,7 +275,7 @@ crash=crash=撞擊=I heard a loud crash.
         renderGame();
     }
 
-    // 完整的 RenderGame 函式
+    // 渲染核心
     function renderGame() {
         const container = document.getElementById('game-area');
         const data = currentLevelWords[currentIndex];
@@ -303,15 +283,25 @@ crash=crash=撞擊=I heard a loud crash.
 
         let html = `<div class="progress-indicator">${currentIndex+1} / ${currentLevelWords.length}</div>`;
 
+        // 例句元件
         let sentHtml = data.sent ? 
             `<div class="sentence-tag noselect" onclick="speakSentence(this)">
-                <span class="sent-icon">🔊</span>
-                <span>${data.sent}</span>
+                <span>🔊 ${data.sent}</span>
             </div>` : '';
 
+        // 字根元件 (只在學習模式顯示)
+        let rootHtml = '';
+        if(currentMode === 'study' && data.root && data.root !== "無") {
+            rootHtml = `
+                <button class="root-btn" onclick="toggleRoot()">🌱 查看字根 (Root)</button>
+                <div id="root-display" class="root-tag">${data.root}</div>
+            `;
+        }
+
+        // 提示元件
         let hintHtml = `
             <div class="hint-section noselect">
-                <button class="hint-btn" onclick="toggleAnswer()">💡 偷看答案 (Peek)</button>
+                <button class="hint-btn" onclick="toggleAnswer()">💡 偷看答案</button>
                 <div id="answer-reveal" class="answer-reveal"></div>
             </div>
         `;
@@ -321,6 +311,7 @@ crash=crash=撞擊=I heard a loud crash.
             html += `<div class="syllable-display" id="syl-display">${isSyllableShown ? data.s.join(' • ') : ''}</div>`;
             html += `<div class="big-word noselect" onclick="speakWord()">${colorCodeWord(data.w)}</div>`;
             html += `<div class="chinese">${data.m}</div>`;
+            html += rootHtml; // 插入字根
             html += sentHtml;
             html += `<div class="nav-controls noselect">
                 <button class="action-btn" onclick="toggleSyllable()" style="background:#90A4AE">拆解</button>
@@ -328,13 +319,13 @@ crash=crash=撞擊=I heard a loud crash.
                 <button class="action-btn" onclick="nextWord()">下一字 ➡</button>
             </div>`;
         } else if (currentMode === 'block') {
-            html += `<div class="feedback" id="feedback-msg">重組練習</div>`;
+            html += `<div class="feedback" id="feedback-msg">拼圖練習</div>`;
             html += `<div class="chinese">${data.m}</div>`;
             html += `<div class="letter-slots" id="slots-area">`;
             for(let i=0; i<data.w.length; i++) html += data.w[i] === ' ' ? `<div class="slot space"> </div>` : `<div class="slot" id="slot-${i}"></div>`;
             html += `</div>`;
             html += `<div class="scramble-area noselect" id="block-btns"></div>`;
-            html += hintHtml; 
+            html += hintHtml;
             html += sentHtml;
             html += `<div class="nav-controls noselect">
                 <button class="action-btn" style="background:#B0BEC5" onclick="renderGame()">重置 ↺</button>
@@ -345,8 +336,8 @@ crash=crash=撞擊=I heard a loud crash.
         } else if (currentMode === 'dictation') {
             html += `<div class="feedback" id="feedback-msg">聽寫練習</div>`;
             html += `<div class="chinese">${data.m}</div>`;
-            html += `<input type="text" class="input-box" id="dict-input" autocomplete="off" placeholder="Type answer..." onkeypress="handleEnter(event)">`;
-            html += hintHtml; 
+            html += `<input type="text" class="input-box" id="dict-input" autocomplete="off" placeholder="輸入答案" onkeypress="handleEnter(event)">`;
+            html += hintHtml;
             html += sentHtml;
             html += `<div class="nav-controls noselect">
                 <button class="action-btn" onclick="checkDictation()">檢查 ✅</button>
@@ -360,20 +351,18 @@ crash=crash=撞擊=I heard a loud crash.
 
     function colorCodeWord(w) { return w.split('').map(c => /[aeiou]/i.test(c) ? `<span class="vowel">${c}</span>` : (/[a-z]/i.test(c)?`<span class="consonant">${c}</span>`:c)).join(''); }
     function toggleSyllable() { isSyllableShown = !isSyllableShown; document.getElementById('syl-display').innerText = isSyllableShown ? currentLevelWords[currentIndex].s.join(' • ') : ''; }
-    
+    function toggleRoot() { 
+        const el = document.getElementById('root-display'); 
+        if(el) el.style.display = (el.style.display === 'block' ? 'none' : 'block'); 
+    }
     function toggleAnswer() {
         const el = document.getElementById('answer-reveal');
         if(!el) return;
-        if(el.innerText === "") {
-            el.innerText = currentLevelWords[currentIndex].w;
-        } else {
-            el.innerText = "";
-        }
+        el.innerText = (el.innerText === "") ? currentLevelWords[currentIndex].w : "";
     }
-
     function nextWord() {
         if (currentIndex < currentLevelWords.length - 1) { currentIndex++; renderGame(); }
-        else { if(confirm("完成本組！重來一次？")) { currentIndex=0; renderGame(); } }
+        else { if(confirm("完成本組！重來？")) { currentIndex=0; renderGame(); } }
     }
     
     function initVoices() {
@@ -397,27 +386,20 @@ crash=crash=撞擊=I heard a loud crash.
     
     function speakWord() {
         try {
-            synth.cancel();
-            if(!currentVoice) initVoices();
+            synth.cancel(); if(!currentVoice) initVoices();
             const u = new SpeechSynthesisUtterance(currentLevelWords[currentIndex].w);
-            if(currentVoice) u.voice = currentVoice;
-            u.rate = 0.85; 
-            synth.speak(u);
-        } catch(e) { console.error(e); }
+            if(currentVoice) u.voice = currentVoice; u.rate = 0.85; synth.speak(u);
+        } catch(e) {}
     }
-
     function speakSentence(el) {
         try {
-            synth.cancel();
-            if(!currentVoice) initVoices();
-            const sent = currentLevelWords[currentIndex].sent;
-            const u = new SpeechSynthesisUtterance(sent);
-            if(currentVoice) u.voice = currentVoice;
-            u.rate = 0.9; 
+            synth.cancel(); if(!currentVoice) initVoices();
+            const u = new SpeechSynthesisUtterance(currentLevelWords[currentIndex].sent);
+            if(currentVoice) u.voice = currentVoice; u.rate = 0.9; 
             if(el) el.classList.add('playing');
             u.onend = () => { if(el) el.classList.remove('playing'); };
             synth.speak(u);
-        } catch(e) { console.error(e); }
+        } catch(e) {}
     }
 
     function initBlockGame(word) {
@@ -432,11 +414,8 @@ crash=crash=撞擊=I heard a loud crash.
                     if(!document.getElementById(`slot-${k}`)?.innerText && word[k]!==' ') { idx=k; break; }
                 }
                 if(idx !== -1) {
-                    let s = document.getElementById(`slot-${idx}`); 
-                    s.innerText = item.c; 
-                    s.classList.add('filled');
-                    btn.disabled = true;
-                    checkBlock(word);
+                    let s = document.getElementById(`slot-${idx}`); s.innerText = item.c; s.classList.add('filled');
+                    btn.disabled = true; checkBlock(word);
                 }
             };
             area.appendChild(btn);
