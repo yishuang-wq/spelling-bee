@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>拼字學習機 V7.0 (主題單元版)</title>
+    <title>拼字學習機 V8.0 (雲端連線版)</title>
     
     <style>
         :root {
@@ -26,15 +26,12 @@
             width: 100%; background: var(--primary); padding: 10px 15px;
             text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
             position: sticky; top: 0; z-index: 100;
-            display: flex; justify-content: space-between; align-items: center;
         }
-        .header-title { font-size: 1.2rem; font-weight: bold; color: #5D4037; flex-grow: 1; }
-        .setting-btn { background: none; border: none; font-size: 1.5rem; cursor: pointer; }
+        .header-title { font-size: 1.2rem; font-weight: bold; color: #5D4037; }
 
         .controls-row { display: flex; justify-content: center; align-items: center; gap: 8px; width:100%; padding: 10px; background: #fff8e1; flex-wrap: wrap;}
         select { padding: 8px; border-radius: 20px; border: 2px solid #ddd; font-size: 0.95rem; background: white; max-width: 200px; }
         
-        /* 錯題本按鈕 */
         .mistake-btn {
             background: #F48FB1; color: white; border: none; padding: 8px 15px; 
             border-radius: 20px; font-weight: bold; font-size: 0.95rem; 
@@ -100,11 +97,6 @@
         .hint-btn:active { transform: translateY(2px); box-shadow: none; }
         .answer-reveal { margin-top: 5px; font-size: 1.5rem; font-weight: bold; color: var(--error); letter-spacing: 2px; min-height: 30px; }
 
-        #settings-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 200; align-items: center; justify-content: center; }
-        .modal-content { background: white; width: 90%; max-width: 500px; padding: 20px; border-radius: 15px; max-height: 85vh; overflow-y: auto; text-align: left; }
-        textarea { width: 100%; height: 250px; border: 2px solid #eee; padding: 10px; font-family: monospace; font-size: 0.9rem; border-radius: 8px; resize: vertical; white-space: pre-wrap; }
-        .modal-actions { text-align: right; margin-top: 15px; display: flex; justify-content: flex-end; gap: 10px; }
-        
         #emergency-reset { position: fixed; bottom: 10px; left: 10px; font-size: 12px; opacity: 0.7; z-index: 9999; text-decoration: underline; cursor: pointer; color: #d32f2f; background: rgba(255,255,255,0.8); padding: 5px; border-radius: 4px; }
         
         .feedback { font-size: 1.3rem; height: 30px; margin-bottom: 5px; font-weight: bold; }
@@ -120,9 +112,7 @@
 <body>
 
 <header class="noselect">
-    <div style="width:30px"></div>
-    <div class="header-title">🐝 Spelling Bee V7.0</div>
-    <button class="setting-btn" onclick="openSettings()">⚙️</button>
+    <div class="header-title">🐝 Spelling Bee V8.0 (雲端版)</div>
 </header>
 
 <div class="controls-row noselect">
@@ -138,70 +128,115 @@
 </div>
 
 <div id="game-area">
-    <div style="padding:20px; color:#999;">Loading... <br>若卡住請按左下角重置</div>
-</div>
-
-<div id="settings-modal">
-    <div class="modal-content">
-        <h3 style="margin-top:0; color:var(--text)">📝 編輯單字庫 (支援單元分類)</h3>
-        <p style="font-size:0.9rem; color:#666; background:#f5f5f5; padding:8px; border-radius:5px;">
-            【分類語法】在開頭加上 <strong># 單元名稱</strong>，下方就會自動歸類！<br>
-            【單字格式】單字=音節=中文=例句=字根
-        </p>
-        <textarea id="data-input"></textarea>
-        <div class="modal-actions">
-            <button class="action-btn" style="background:#B0BEC5" onclick="closeSettings()">取消</button>
-            <button class="action-btn" style="background:#FFB74D" onclick="resetDefault()">恢復預設</button>
-            <button class="action-btn" style="background:var(--success)" onclick="saveData()">💾 儲存</button>
-        </div>
+    <div style="padding:20px; color:#2980b9; font-weight:bold; font-size:1.2rem;">
+        ☁️ 正在與 Google 雲端連線同步資料...
     </div>
 </div>
 
-<div id="emergency-reset" onclick="hardReset()">⚠️ 畫面卡住？點我重置</div>
+<div id="emergency-reset" onclick="hardReset()">⚠️ 清除本機錯題紀錄</div>
 
 <script>
     window.onerror = function(msg) { console.error(msg); return false; };
 
-    // 預設資料：現在包含了 "# 主題名稱"
-    const defaultDataRaw = `
-# Unit 1: 實用動詞
-predict=pre-dict=預測=Scientists predict the weather.=pre(前) + dict(說) -> 預先說
-attract=at-tract=吸引=Flowers attract bees.=at(去) + tract(拉) -> 拉過來
-return=re-turn=返回=Please return the book.=re(回) + turn(轉) -> 轉回來
-
-# Unit 2: 交通與旅行
-bicycle=bi-cy-cle=腳踏車=I ride my bicycle to school.=bi(二) + cycle(圓圈) -> 兩輪車
-exit=ex-it=出口=Please use the emergency exit.=ex(向外) + it(走) -> 走出去
-travel=trav-el=旅行=We love to travel.=無
-
-# 第一課：日常用品
-portable=por-ta-ble=可攜帶的=This computer is portable.=port(拿) + able(可...的)
-furniture=fur-ni-ture=家具=New furniture is nice.=無
+    // ==========================================
+    // ⚠️ 老師請注意：把您的 Google 試算表 CSV 網址貼在下方的雙引號中
+    // ==========================================
+    const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRONhOC4pDSRC5OJF2gHtnubsNGf_c7zT4nFfiLVNll23vPRCEZzXLJZzNfeT3wLblqAQdROWqDNUh9/pub?output=csv";
+    
+    // 如果老師還沒貼網址，系統會使用這組備用教學資料
+    const fallbackData = `
+# 雲端連線教學
+cloud=cloud=雲端=The data is saved in the cloud.=無
+sync=sync=同步=It will sync automatically.=無
+success=suc-cess=成功=We achieved great success.=suc(下面) + cess(走)
 `;
 
     let allWords = [];
     let currentLevelWords = [];
-    let unitNames = []; // 儲存所有單元名稱
+    let unitNames = []; 
     let currentIndex = 0;
     let currentMode = 'study';
     let currentVoice = null;
     let isSyllableShown = false;
     const synth = window.speechSynthesis;
-    const STORAGE_KEY = 'spelling_bee_v7_unit'; 
-    const MISTAKE_KEY = 'spelling_bee_v7_mistakes';
+    const MISTAKE_KEY = 'spelling_bee_v8_mistakes';
 
     window.hardReset = function() {
-        if(confirm("確定要重置？")) { 
-            localStorage.removeItem(STORAGE_KEY); 
+        if(confirm("確定要清除這台裝置的「錯題本」紀錄嗎？(雲端單字庫不受影響)")) { 
             localStorage.removeItem(MISTAKE_KEY);
             location.reload(); 
         }
     };
 
-    setTimeout(function() {
-        try { loadData(); initVoices(); updateMistakeCount(); } 
-        catch(e) { console.error(e); document.getElementById('game-area').innerText='啟動錯誤'; }
+    // 啟動程式：改為非同步向雲端抓取資料
+    setTimeout(async function() {
+        try { 
+            await loadDataFromCloud(); 
+            initVoices(); 
+            updateMistakeCount(); 
+        } 
+        catch(e) { 
+            console.error(e); 
+            document.getElementById('game-area').innerHTML='<div style="color:red; padding:20px;">載入發生錯誤，請重新整理網頁。</div>'; 
+        }
     }, 100);
+
+    /* ================= 雲端抓取機制 ================= */
+    async function loadDataFromCloud() {
+        // 如果網址沒改，就用備用資料
+        if(SHEET_CSV_URL === "請把你的 Google 表單 CSV 網址貼在這裡" || SHEET_CSV_URL.trim() === "") {
+            parseAndSetData(fallbackData.trim());
+            return;
+        }
+
+        try {
+            const response = await fetch(SHEET_CSV_URL);
+            if (!response.ok) throw new Error("Google 試算表連線失敗");
+            const text = await response.text();
+            parseAndSetData(text);
+        } catch (error) {
+            console.error(error);
+            alert("⚠️ 無法讀取 Google 試算表。請確認網址是否正確，且已經「發布到網路」。\n\n系統暫時切換至備用模式。");
+            parseAndSetData(fallbackData.trim());
+        }
+    }
+
+    function parseAndSetData(text) {
+        allWords = [];
+        let currentUnitName = "未分類單字"; 
+        
+        const lines = text.split('\n');
+        lines.forEach(line => {
+            line = line.trim();
+            if(line === '') return;
+            
+            // 清洗 Google CSV 可能自動產生的頭尾雙引號 (若有例句包含逗號)
+            if(line.startsWith('"') && line.endsWith('"')) {
+                line = line.substring(1, line.length - 1);
+                // 還原 CSV 轉義的雙引號 "" 為 "
+                line = line.replace(/""/g, '"');
+            }
+
+            if(line.startsWith('#')) {
+                currentUnitName = line.substring(1).trim();
+                return;
+            }
+
+            const parts = line.split('=');
+            if(parts.length >= 1) {
+                const w = parts[0].trim();
+                const s = parts[1] ? parts[1].split('-') : [w];
+                const m = parts[2] || "";
+                const sent = parts[3] || ""; 
+                const root = parts[4] || ""; 
+                
+                allWords.push({ w: w, s: s, m: m, sent: sent, root: root, unit: currentUnitName });
+            }
+        });
+        
+        initLevels();
+        loadLevel(document.getElementById('levelSelect').options[0].value); 
+    }
 
     /* ================= 錯題本機制 ================= */
     function recordMistake(word) {
@@ -238,7 +273,7 @@ furniture=fur-ni-ture=家具=New furniture is nice.=無
         if(currentLevelWords.length === 0) {
             localStorage.setItem(MISTAKE_KEY, JSON.stringify([]));
             updateMistakeCount();
-            alert("錯題本裡的單字已不存在於字典中。");
+            alert("錯題本裡的單字已從雲端題庫中移除了。");
             return;
         }
         
@@ -246,45 +281,6 @@ furniture=fur-ni-ture=家具=New furniture is nice.=無
         currentIndex = 0;
         isSyllableShown = false;
         renderGame();
-    }
-    /* ============================================== */
-
-    function loadData() {
-        let stored = localStorage.getItem(STORAGE_KEY);
-        if (!stored || stored.trim() === '') stored = defaultDataRaw.trim();
-        parseAndSetData(stored);
-    }
-
-    // 核心修改：解析時辨識 "# 單元名稱"
-    function parseAndSetData(text) {
-        allWords = [];
-        let currentUnitName = "預設清單"; // 如果第一行沒寫 #，預設歸類
-        
-        const lines = text.split('\n');
-        lines.forEach(line => {
-            line = line.trim();
-            if(line === '') return;
-            
-            // 如果開頭是井字號，更新單元名稱
-            if(line.startsWith('#')) {
-                currentUnitName = line.substring(1).trim();
-                return;
-            }
-
-            const parts = line.split('=');
-            if(parts.length >= 1) {
-                const w = parts[0].trim();
-                const s = parts[1] ? parts[1].split('-') : [w];
-                const m = parts[2] || "";
-                const sent = parts[3] || ""; 
-                const root = parts[4] || ""; 
-                
-                // 把單字跟單元名稱綁在一起
-                allWords.push({ w: w, s: s, m: m, sent: sent, root: root, unit: currentUnitName });
-            }
-        });
-        initLevels();
-        loadLevel(document.getElementById('levelSelect').options[0].value); // 預設載入第一個選單項目
     }
 
     function changeLevel() { loadLevel(document.getElementById('levelSelect').value); }
@@ -297,37 +293,11 @@ furniture=fur-ni-ture=家具=New furniture is nice.=無
         renderGame();
     }
 
-    function openSettings() {
-        let stored = localStorage.getItem(STORAGE_KEY);
-        document.getElementById('data-input').value = stored ? stored : defaultDataRaw.trim();
-        document.getElementById('settings-modal').style.display = 'flex';
-    }
-    function closeSettings() { document.getElementById('settings-modal').style.display = 'none'; }
-    function saveData() {
-        const val = document.getElementById('data-input').value.trim();
-        if(!val) { alert("內容為空"); return; }
-        localStorage.setItem(STORAGE_KEY, val);
-        parseAndSetData(val);
-        alert("已儲存");
-        closeSettings();
-    }
-    function resetDefault() {
-        if(confirm("恢復預設？")) {
-            localStorage.removeItem(STORAGE_KEY);
-            localStorage.removeItem(MISTAKE_KEY); 
-            parseAndSetData(defaultDataRaw.trim());
-            document.getElementById('data-input').value = defaultDataRaw.trim();
-            closeSettings();
-        }
-    }
-
-    // 根據單元生成下拉選單
     function initLevels() {
         const select = document.getElementById('levelSelect');
         select.innerHTML = '';
         if(allWords.length === 0) return;
         
-        // 抓出所有不重複的單元名稱
         const units = [...new Set(allWords.map(word => word.unit))];
 
         units.forEach(unit => {
@@ -344,7 +314,6 @@ furniture=fur-ni-ture=家具=New furniture is nice.=無
         select.appendChild(misOpt);
     }
 
-    // 根據選擇的單元載入單字
     function loadLevel(val) {
         if(val === 'mistakes') {
             loadMistakes();
@@ -354,7 +323,6 @@ furniture=fur-ni-ture=家具=New furniture is nice.=無
         if(val === 'all') {
             currentLevelWords = [...allWords];
         } else {
-            // 過濾出屬於該單元的單字
             currentLevelWords = allWords.filter(w => w.unit === val);
         }
         
@@ -372,7 +340,7 @@ furniture=fur-ni-ture=家具=New furniture is nice.=無
             return;
         }
 
-        if(!data) { container.innerHTML = "無資料"; return; }
+        if(!data) { container.innerHTML = "單元內無資料"; return; }
 
         let html = `<div class="progress-indicator">${currentIndex+1} / ${currentLevelWords.length}</div>`;
 
