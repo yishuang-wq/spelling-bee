@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>拼字學習機 V8.1 (雲端強化版)</title>
+    <title>拼字學習機 V8.2 (雲端完美版)</title>
     
     <style>
         :root {
@@ -112,7 +112,7 @@
 <body>
 
 <header class="noselect">
-    <div class="header-title">🐝 Spelling Bee V8.1 (雲端強化版)</div>
+    <div class="header-title">🐝 Spelling Bee V8.2 (雲端完美版)</div>
 </header>
 
 <div class="controls-row noselect">
@@ -141,7 +141,7 @@
     // ==========================================
     // ⚠️ 老師請注意：把您的 Google 試算表 CSV 網址貼在下方的雙引號中
     // ==========================================
-    const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRONhOC4pDSRC5OJF2gHtnubsNGf_c7zT4nFfiLVNll23vPRCEZzXLJZzNfeT3wLblqAQdROWqDNUh9/pub?output=csv";
+    const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRONhOC4pDSRC5OJF2gHtnubsNGf_c7zT4nFfiLVNll23vPRCEZzXLJZzNfeT3wLblqAQdROWqDNUh9/pubhtml";
     
     const fallbackData = `
 # 雲端連線教學
@@ -205,18 +205,13 @@ success=suc-cess=成功=We achieved great success.=suc(下面) + cess(走)
             line = line.trim();
             if(line === '') return;
             
-            // 【終極防呆機制】
-            // 規則一：如果這一行「沒有等號 (=)」，代表它絕對不是單字資料
             if (!line.includes('=')) {
-                // 如果裡面有包含 #，我們就認定它是單元標籤！
                 if (line.includes('#')) {
-                    // 取出 # 後面的文字，並暴力清掉 Google 亂加的雙引號(")或逗號(,)
                     currentUnitName = line.split('#')[1].replace(/["',]/g, '').trim();
                 }
-                return; // 跳過這一行，繼續讀下一行
+                return;
             }
 
-            // 規則二：有等號的，就是單字資料，先清掉 CSV 頭尾引號
             if(line.startsWith('"') && line.endsWith('"')) {
                 line = line.substring(1, line.length - 1);
                 line = line.replace(/""/g, '"');
@@ -224,12 +219,14 @@ success=suc-cess=成功=We achieved great success.=suc(下面) + cess(走)
 
             const parts = line.split('=');
             if(parts.length >= 2) {
-                // 強制把單字開頭可能殘留的引號清掉 (雙重防護)
                 const w = parts[0].replace(/^["'\s]+/, '').trim();
-                const s = parts[1] ? parts[1].trim() : w;
-                const m = parts[2] || "";
-                const sent = parts[3] || ""; 
-                const root = parts[4] || ""; 
+                
+                // 【修復核心】：把 split('-') 補回來，讓音節乖乖變成陣列！
+                const s = parts[1] ? parts[1].trim().split('-') : [w];
+                
+                const m = parts[2] ? parts[2].trim() : "";
+                const sent = parts[3] ? parts[3].trim() : ""; 
+                const root = parts[4] ? parts[4].trim() : ""; 
                 
                 allWords.push({ w: w, s: s, m: m, sent: sent, root: root, unit: currentUnitName });
             }
@@ -243,7 +240,6 @@ success=suc-cess=成功=We achieved great success.=suc(下面) + cess(走)
         }
     }
 
-    /* ================= 錯題本與遊戲核心邏輯 ================= */
     function recordMistake(word) {
         let m = JSON.parse(localStorage.getItem(MISTAKE_KEY)) || [];
         if(!m.includes(word)) { 
