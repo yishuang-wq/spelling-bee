@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>拼字學習機 V8.0 (雲端連線版)</title>
+    <title>拼字學習機 V8.1 (雲端強化版)</title>
     
     <style>
         :root {
@@ -30,7 +30,7 @@
         .header-title { font-size: 1.2rem; font-weight: bold; color: #5D4037; }
 
         .controls-row { display: flex; justify-content: center; align-items: center; gap: 8px; width:100%; padding: 10px; background: #fff8e1; flex-wrap: wrap;}
-        select { padding: 8px; border-radius: 20px; border: 2px solid #ddd; font-size: 0.95rem; background: white; max-width: 200px; }
+        select { padding: 8px; border-radius: 20px; border: 2px solid #ddd; font-size: 0.95rem; background: white; max-width: 200px; outline: none; }
         
         .mistake-btn {
             background: #F48FB1; color: white; border: none; padding: 8px 15px; 
@@ -50,7 +50,7 @@
             min-height: 400px; display: flex; flex-direction: column; justify-content: center; align-items: center;
         }
 
-        .big-word { font-size: 3rem; font-weight: bold; margin: 15px 0; letter-spacing: 1px; cursor: pointer; }
+        .big-word { font-size: 3rem; font-weight: bold; margin: 15px 0; letter-spacing: 1px; cursor: pointer; word-break: break-word; }
         .big-word:active { transform: scale(0.95); }
         .syllable-display { font-size: 1.5rem; color: #90A4AE; margin-bottom: 5px; height: 30px; font-family: monospace; }
         .chinese { font-size: 1.5rem; margin-top: 5px; color: #546E7A; font-weight: bold; }
@@ -60,7 +60,7 @@
             background: var(--sent-bg); color: #006064;
             padding: 10px 20px; border-radius: 25px; margin-top: 10px;
             font-size: 1rem; font-style: italic; cursor: pointer;
-            transition: all 0.2s; max-width: 100%; text-align: left;
+            transition: all 0.2s; max-width: 100%; text-align: left; line-height: 1.4;
         }
         .sentence-tag:active { transform: scale(0.98); background: #fff; }
 
@@ -112,7 +112,7 @@
 <body>
 
 <header class="noselect">
-    <div class="header-title">🐝 Spelling Bee V8.0 (雲端版)</div>
+    <div class="header-title">🐝 Spelling Bee V8.1 (雲端強化版)</div>
 </header>
 
 <div class="controls-row noselect">
@@ -143,7 +143,6 @@
     // ==========================================
     const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRONhOC4pDSRC5OJF2gHtnubsNGf_c7zT4nFfiLVNll23vPRCEZzXLJZzNfeT3wLblqAQdROWqDNUh9/pub?output=csv";
     
-    // 如果老師還沒貼網址，系統會使用這組備用教學資料
     const fallbackData = `
 # 雲端連線教學
 cloud=cloud=雲端=The data is saved in the cloud.=無
@@ -153,7 +152,6 @@ success=suc-cess=成功=We achieved great success.=suc(下面) + cess(走)
 
     let allWords = [];
     let currentLevelWords = [];
-    let unitNames = []; 
     let currentIndex = 0;
     let currentMode = 'study';
     let currentVoice = null;
@@ -168,7 +166,6 @@ success=suc-cess=成功=We achieved great success.=suc(下面) + cess(走)
         }
     };
 
-    // 啟動程式：改為非同步向雲端抓取資料
     setTimeout(async function() {
         try { 
             await loadDataFromCloud(); 
@@ -181,9 +178,7 @@ success=suc-cess=成功=We achieved great success.=suc(下面) + cess(走)
         }
     }, 100);
 
-    /* ================= 雲端抓取機制 ================= */
     async function loadDataFromCloud() {
-        // 如果網址沒改，就用備用資料
         if(SHEET_CSV_URL === "請把你的 Google 表單 CSV 網址貼在這裡" || SHEET_CSV_URL.trim() === "") {
             parseAndSetData(fallbackData.trim());
             return;
@@ -210,22 +205,28 @@ success=suc-cess=成功=We achieved great success.=suc(下面) + cess(走)
             line = line.trim();
             if(line === '') return;
             
-            // 清洗 Google CSV 可能自動產生的頭尾雙引號 (若有例句包含逗號)
+            // 【終極防呆機制】
+            // 規則一：如果這一行「沒有等號 (=)」，代表它絕對不是單字資料
+            if (!line.includes('=')) {
+                // 如果裡面有包含 #，我們就認定它是單元標籤！
+                if (line.includes('#')) {
+                    // 取出 # 後面的文字，並暴力清掉 Google 亂加的雙引號(")或逗號(,)
+                    currentUnitName = line.split('#')[1].replace(/["',]/g, '').trim();
+                }
+                return; // 跳過這一行，繼續讀下一行
+            }
+
+            // 規則二：有等號的，就是單字資料，先清掉 CSV 頭尾引號
             if(line.startsWith('"') && line.endsWith('"')) {
                 line = line.substring(1, line.length - 1);
-                // 還原 CSV 轉義的雙引號 "" 為 "
                 line = line.replace(/""/g, '"');
             }
 
-            if(line.startsWith('#')) {
-                currentUnitName = line.substring(1).trim();
-                return;
-            }
-
             const parts = line.split('=');
-            if(parts.length >= 1) {
-                const w = parts[0].trim();
-                const s = parts[1] ? parts[1].split('-') : [w];
+            if(parts.length >= 2) {
+                // 強制把單字開頭可能殘留的引號清掉 (雙重防護)
+                const w = parts[0].replace(/^["'\s]+/, '').trim();
+                const s = parts[1] ? parts[1].trim() : w;
                 const m = parts[2] || "";
                 const sent = parts[3] || ""; 
                 const root = parts[4] || ""; 
@@ -235,10 +236,14 @@ success=suc-cess=成功=We achieved great success.=suc(下面) + cess(走)
         });
         
         initLevels();
-        loadLevel(document.getElementById('levelSelect').options[0].value); 
+        if(document.getElementById('levelSelect').options.length > 0) {
+            loadLevel(document.getElementById('levelSelect').options[0].value); 
+        } else {
+            document.getElementById('game-area').innerHTML = "無資料";
+        }
     }
 
-    /* ================= 錯題本機制 ================= */
+    /* ================= 錯題本與遊戲核心邏輯 ================= */
     function recordMistake(word) {
         let m = JSON.parse(localStorage.getItem(MISTAKE_KEY)) || [];
         if(!m.includes(word)) { 
